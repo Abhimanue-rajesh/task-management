@@ -1,0 +1,143 @@
+{% extends "general_base.html" %}
+{% block page_specific_links %}
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+{% endblock page_specific_links %}
+{% block page_content %}
+    <div class="container col-xl-12 col-xxl-10 px-4 py-2 mt-1">
+        <div class="col-md-12 mx-auto col-lg-7">
+            <form method="post" id="add_update_task_form">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <div class="form-group mb-2">{{ form.title.label_tag }} {{ form.title }}</div>
+                    <div class="form-group mb-2">{{ form.description.label_tag }} {{ form.description }}</div>
+                    <div class="row">
+                        <div class="col-md-4 form-group mb-2">{{ form.type.label_tag }} {{ form.type }}</div>
+                        <div class="col-md-4 form-group mb-2">{{ form.priority.label_tag }} {{ form.priority }}</div>
+                        <div class="col-md-4 form-group mb-2">{{ form.due_date.label_tag }} {{ form.due_date }}</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12 form-group mb-2">{{ form.project.label_tag }} {{ form.project }}</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12 form-group mb-2">
+                            {{ form.assigned_to.label_tag }}
+                            {% if request.user.role.type != "TRAINEE" %}
+                                <div class="col-md-12 form-group mb-2">
+                                    <p class="fs-5">Assign to</p>
+                                    <div class="form-group mb-2">
+                                        <input class="form-control"
+                                               list="searchlistOption"
+                                               id="searchDataLists"
+                                               placeholder="Start Typing to Select..">
+                                        <datalist id="searchlistOption">
+                                            <option value="{{ request.user.username }}">Assign Self</option>
+                                            {% for user in users %}<option value="{{ user.username }}">{{ user.username }} {{ user.role }}</option>{% endfor %}
+                                        </datalist>
+                                    </div>
+                                    <div id="selectedUsers" class="form-control p-3">
+                                        Selected Users:
+                                        {% for user in assigned_users %}
+                                            <span class="tag p-2 mx-1 my-1 border rounded-4"
+                                                  data-value="{{ user.username }}">
+                                                {{ user.username }}
+                                                <button class="btn btn-sm btn-danger px-1 py-0 ms-2 remove-tag">X</button>
+                                            </span>
+                                        {% endfor %}
+                                    </div>
+                                    <input class="form-control" id="assignDataList" name="assigned_to" hidden>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="d-grid gap-2 d-md-block text-end">
+                    <button type="button" class="btn btn-danger" onclick="goBackAndRefresh()">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="clearButton">Clear</button>
+                    <button type="submit" class="btn btn-primary w-25">Submit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock page_content %}
+{% block page_specific_scripts %}
+    <script>
+        $(document).ready(function () {
+            const type_field = document.getElementById('id_type')
+            const project_field = document.getElementById('id_project')
+            const projectLabel = document.querySelector(`label[for="id_project"]`);
+
+            function projectVisibility() {
+                 // Get the selected value from the type field
+                const selectedValue = type_field.value;
+            // Check if the selected value is 'project'
+            if (selectedValue === 'project') {
+                    project_field.style.display = 'block';
+                    projectLabel.style.display = 'block';
+                } else {
+                    project_field.style.display = 'none';
+                    projectLabel.style.display = 'none';
+                }
+            }
+          // Initial check on page load
+            projectVisibility();
+        // Check visibility on change of type field
+        type_field.addEventListener('change', projectVisibility);
+
+            // Pre-populate assigned users
+            updateAssignedToInput();
+
+            document.getElementById("searchDataLists").addEventListener('input', function(event) {
+                  // Check if the input matches one of the options in the datalist
+                var datalist = document.getElementById('searchlistOption'); // Replace with the actual datalist ID
+                var selectedValue = this.value.trim();
+
+                var isOptionSelected = Array.from(datalist.options).some(option => option.value === selectedValue);
+
+                if (isOptionSelected && selectedValue && !document.querySelector(`#selectedUsers .tag[data-value="${selectedValue}"]`)) {
+                    addTag(selectedValue);
+                    this.value = '';  // Clear the input after adding
+                    updateAssignedToInput();
+                }
+            });
+
+            document.getElementById("searchDataLists").addEventListener('keypress', function(event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    var selectedValue = this.value.trim();
+                    if (selectedValue && !document.querySelector(`#selectedUsers .tag[data-value="${selectedValue}"]`)) {
+                        addTag(selectedValue);
+                        this.value = '';  // Clear the input after adding
+                        updateAssignedToInput();
+                    }
+                }
+            });
+
+            document.getElementById("selectedUsers").addEventListener('click', function(event) {
+                if (event.target.classList.contains('remove-tag')) {
+                    var tag = event.target.parentElement;
+                    tag.parentElement.removeChild(tag);
+                    updateAssignedToInput();
+                }
+            });
+
+            function addTag(value) {
+                var tag = document.createElement('span');
+                tag.className = 'tag p-2 mx-1 my-1 border rounded-4';
+                tag.setAttribute('data-value', value);
+                tag.innerHTML = value + '<button class="btn btn-sm btn-danger px-1 py-0 ms-2 remove-tag">X</button>';
+                document.getElementById('selectedUsers').appendChild(tag);
+            }
+
+            function updateAssignedToInput() {
+                var assignedToInput = document.getElementById("assignDataList");
+                var tags = document.querySelectorAll('#selectedUsers .tag');
+                var values = [];
+                tags.forEach(tag => values.push(tag.getAttribute('data-value')));
+                assignedToInput.value = values.join(', ');
+            }
+        });
+    document.getElementById("clearButton").addEventListener("click",function(){
+        document.getElementById("add_update_task_form").reset();
+    })
+    </script>
+{% endblock page_specific_scripts %}

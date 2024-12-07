@@ -1,0 +1,56 @@
+{% load static %}
+{% load file_exists %}
+<div class="p-3 sidebar">
+    <div class="row gx-5">
+        <div class="col-2">
+            <img src="{% static 'images/PulseFlow.png' %}"
+                 alt="Logo"
+                 id="task_management_logo"
+                 width="35"
+                 height="30"
+                 class="d-inline-block align-text-top m-0 p-0">
+        </div>
+        <div class="col">
+            <a href="#"
+               class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
+                <span class="fs-4 d-none d-md-inline">Task Management</span>
+            </a>
+        </div>
+    </div>
+    <div class="text-center mt-3">
+        <div class="mx-auto border-primary">
+            {% if user.profile_picture and user.profile_picture.name|file_exists %}
+                <img src="/media/{{ user.profile_picture }}"
+                     alt="profile_picture"
+                     width="100px"
+                     height="100px"
+                     id="profile-picture"
+                     class="rounded-circle">
+            {% else %}
+                <img src="/media/profile_pictures/user_default.png"
+                     alt="profile_picture"
+                     width="100px"
+                     height="100px"
+                     id="profile-picture"
+                     class="rounded-circle">
+            {% endif %}
+            <p class="fw-bold text-white mt-2 mb-0 pb-0">{{ user.username | capfirst }}</p>
+            <p class="fw-lighter text-white m-0 p-0">{{ user.role.name | capfirst }}</p>
+            <p class="fw-lighter text-white m-0 p-0">{{ user.role.get_type_display | title }}</p>
+        </div>
+    </div>
+    <hr>
+    <ul class="nav nav-pills flex-column mb-auto">
+        <li class="nav-item">
+            <a class="nav-link p-1 mx-1 text-white"
+               href="#"><i class="bi bi-layout-text-window-reverse"></i><span class="d-none d-md-inline ms-1">Dashboard</span></a>
+        </li>
+        {% if perms.tasks.view_task %}
+            <li class="nav-item">
+                <a class="nav-link p-1 mx-1 text-white" href="{% url 'task_list' %}"><i class="bi bi-list-task"></i><span class="d-none d-md-inline ms-1">Tasks</span></a>
+            </li>
+        {% endif %}
+        
+        <hr>
+    </ul>
+</div>

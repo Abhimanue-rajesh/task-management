@@ -23,10 +23,13 @@ INSTALLED_APPS = [
 
 # Add External Apps Here
 EXTERNAL_APPS = [
-    "accounts.apps.AccountsConfig",  # Example - Need to Remove
+    "accounts.apps.AccountsConfig",  
+    "tasks.apps.TasksConfig", 
 ]
 
 INSTALLED_APPS += EXTERNAL_APPS
+
+AUTH_USER_MODEL = 'accounts.User'
 
 LOGIN_REDIRECT_URL = "home"
 LOGOUT_REDIRECT_URL = "home"

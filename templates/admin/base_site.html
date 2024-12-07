@@ -1,0 +1,12 @@
+{% extends "admin/base.html" %}
+{% block title %}
+    {% if subtitle %}{{ subtitle }} |{% endif %}
+    {{ title }} | {{ site_title|default:_("PulseFlow site admin") }}
+{% endblock title %}
+{% block branding %}
+    <h1 id="site-name">
+        <a href="{% url 'admin:index' %}">Pulse Flow Administration</a>
+    </h1>
+{% endblock branding %}
+{% block nav-global %}
+{% endblock nav-global %}
