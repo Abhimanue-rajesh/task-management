@@ -48,7 +48,6 @@ class TaskList(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["type_choices"] = Task.TYPE
         context["priority_choices"] = Task.PRIORITY
         context["status_choices"] = Task.STATUS
         context["assigned_to_choices"] = (
@@ -119,33 +118,11 @@ class TaskCreate(LoginRequiredMixin, CreateView):
     template_name = "tasks/task_create_update.html"
     extra_context = {"page_title": "Create Task"}
 
-    role_hierarchy = {
-        "C_SUITE": ["C_SUITE", "MANAGER", "EMPLOYEE", "TRAINEE"],
-        "MANAGER": ["MANAGER", "EMPLOYEE", "TRAINEE"],
-        "EMPLOYEE": ["EMPLOYEE", "TRAINEE"],
-    }
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        user_role = self.request.user.role.type
-        assignable_roles = self.role_hierarchy.get(user_role, [])
-        if user_role != "TRAINEE":
-            users = User.objects.filter(role__type__in=assignable_roles)
-            context["users"] = users
+        context["users"] = User.objects.all()
 
         return context
-
-    def get_initial(self):
-        initial = super().get_initial()
-
-        # Get the project_id from the URL kwargs or query parameters
-        project_id = self.kwargs.get("project_pk") or self.request.GET.get("project_pk")
-
-        if project_id:
-            initial["project"] = project_id  # Prefill the project field
-            initial["type"] = "project"
-
-        return initial
 
     def get_success_url(self):
         return reverse("task_detail", kwargs={"pk": self.object.id})
@@ -162,26 +139,22 @@ class TaskCreate(LoginRequiredMixin, CreateView):
             description=f"Task created by {self.object.assigned_by} at {self.object.created_at}",
         )
 
-        if current_user.role.type == "TRAINEE":
-            form.instance.assigned_to.add(current_user)
-        else:
-            assigned_usernames = self.request.POST.get("assigned_to", "").split(", ")
-            invalid_usernames = []
+        # Get the assigned_to data (assuming it contains IDs instead of usernames)
+        assigned_ids = self.request.POST.getlist("assigned_to")
+        invalid_ids = []
 
-            for username in assigned_usernames:
-                username = username.strip()
-                if username:
-                    try:
-                        user = User.objects.get(username=username)
-                        form.instance.assigned_to.add(user)
-                    except User.DoesNotExist:
-                        invalid_usernames.append(username)
+        for user_id in assigned_ids:
+            try:
+                user = User.objects.get(id=user_id)
+                form.instance.assigned_to.add(user)
+            except User.DoesNotExist:
+                invalid_ids.append(user_id)
 
-            if invalid_usernames:
-                messages.error(
-                    self.request,
-                    f"The following users do not exist: {', '.join(invalid_usernames)}",
-                )
+        if invalid_ids:
+            messages.error(
+                self.request,
+                f"The following user IDs do not exist: {', '.join(invalid_ids)}",
+            )
 
         return response
 
@@ -217,9 +190,9 @@ class TaskUpdateView(LoginRequiredMixin, UpdateView):
         if user_role != "TRAINEE":
             users = User.objects.filter(role__type__in=assignable_roles)
             context["users"] = users
-            context["assigned_users"] = (
-                self.object.assigned_to.all()
-            )  # Add assigned users
+            context[
+                "assigned_users"
+            ] = self.object.assigned_to.all()  # Add assigned users
         return context
 
     def get_success_url(self):

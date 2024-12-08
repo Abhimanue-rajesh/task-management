@@ -2,7 +2,7 @@ from django import forms
 from django.forms.widgets import DateInput
 from django.utils import timezone
 
-from . import models
+from tasks import models
 
 
 class CreateUpdateTask(forms.ModelForm):
@@ -11,15 +11,14 @@ class CreateUpdateTask(forms.ModelForm):
         fields = [
             "title",
             "description",
-            "type",
             "priority",
             "due_date",
+            "assigned_to",
         ]
         widgets = {
             "title": forms.TextInput(attrs={"class": "form-control"}),
             "description": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
             "due_date": DateInput(attrs={"class": "form-control", "type": "date"}),
-            "type": forms.Select(attrs={"class": "form-select"}),
             "priority": forms.Select(attrs={"class": "form-select"}),
         }
 

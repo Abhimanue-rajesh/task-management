@@ -4,7 +4,7 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>{{ page_title }} - Pulseflow</title>
+        <title>{{ page_title }}</title>
         <!-- Favicon.ico -->
         <link rel="shortcut icon"
               href="{% static 'favicon.ico' %}"
@@ -21,10 +21,9 @@
         <link rel="stylesheet" href="{% static 'css/main.css' %}">
         <!-- Meta Description -->
         <meta name="description"
-              content="This is a comprehensive web application built using the Django framework, designed to streamline task management, inventory tracking, and project organization within a company. The app provides a centralized platform for employees and managers to efficiently collaborate, manage tasks, and monitor inventory levels.">
+              content="This is a comprehensive web application built using the Django framework, designed to streamline task management">
         <!-- Meta Keywords -->
-        <meta name="keywords"
-              content="pulseflow, Task Management, Inventory Management, Project Organization">
+        <meta name="keywords" content="Task Management">
         {% block page_specific_links %}
         {% endblock page_specific_links %}
     </head>
@@ -53,45 +52,7 @@
                                     </button>
                                 </form>
                             {% endif %}
-                            <div class="dropdown mx-2">
-                                <button class="btn btn-outline-secondary dropdown-toggle rounded-4"
-                                        type="button"
-                                        id="themeDropdown"
-                                        data-bs-toggle="dropdown"
-                                        aria-expanded="false">Theme</button>
-                                <ul class="dropdown-menu" aria-labelledby="themeDropdown">
-                                    <li>
-                                        <a class="dropdown-item" href="#" id="lightModeBtn"><i class="bi bi-brightness-high-fill"></i> Light</a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item" href="#" id="darkModeBtn"><i class="bi bi-moon-stars"></i> Dark</a>
-                                    </li>
-                                    <li>
-                                        <hr class="dropdown-divider">
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item" href="#" id="autoModeBtn"><i class="bi bi-circle-half"></i> Auto</a>
-                                    </li>
-                                </ul>
-                            </div>
                             <ul class="navbar-nav ms-auto gap-2">
-                                <li class="nav-item">
-                                    <a class="btn btn-outline-light rounded-circle position-relative"
-                                       type="button"
-                                       href="#">
-                                        <span id="notification-badge"
-                                              class="position-absolute top-0 start-100 translate-middle badge notification-badge rounded-pill bg-danger">0</span>
-                                        <i class="bi bi-bell"></i></a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="btn btn-outline-primary rounded-circle"
-                                       data-bs-toggle="tooltip"
-                                       data-bs-placement="bottom"
-                                       data-bs-custom-class="custom-tooltip"
-                                       data-bs-title="Profile"
-                                       type="button"
-                                       href="#"><i class="bi bi-person"></i></a>
-                                </li>
                                 <li class="nav-item">
                                     <a class="btn btn-outline-danger rounded-circle"
                                        data-bs-toggle="tooltip"
@@ -99,7 +60,7 @@
                                        data-bs-custom-class="custom-tooltip"
                                        data-bs-title="Log Out"
                                        type="button"
-                                       href="#">
+                                       href="{% url "logout_user" %}">
                                         <i class="bi bi-power"></i></a>
                                 </li>
                             </ul>
@@ -160,24 +121,6 @@
         const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
     </script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    {% comment %} <script>
-        $(document).ready(function () {
-            function updateNotificationCount() {
-                $.ajax({
-                    url: "{% url 'get_notification_count' %}",  // Update with the actual URL name
-                    method: "GET",
-                    success: function (data) {
-                        $('#notification-badge').text(data.count > 99 ? '99+' : data.count);
-                    },
-                    error: function (xhr, status, error) {
-                        console.error("Failed to fetch notification count:", error);
-                    }
-                });
-            }
-            // Call the function to update the count initially
-            updateNotificationCount();
-        });
-    </script> {% endcomment %}
     {% block page_specific_scripts %}
     {% endblock page_specific_scripts %}
     <!-- Custom js -->

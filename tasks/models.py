@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone
 
+
 class Activity(models.Model):
     task = models.ForeignKey(
         "Task", on_delete=models.CASCADE, related_name="activities"
@@ -13,16 +14,6 @@ class Activity(models.Model):
 
 
 class Task(models.Model):
-    TYPE = [
-        ("administrative", "Administrative"),
-        ("financial", "Financial"),
-        ("HR", "Human Resource"),
-        ("marketing_and_sales", "Marketing and Sales"),
-        ("it_and_technical", "IT and Technical"),
-        ("operations", "Operations"),
-        ("strategic", "Strategic"),
-    ]
-
     PRIORITY = [
         ("critical", "Critical"),
         ("high", "High"),
@@ -41,8 +32,6 @@ class Task(models.Model):
 
     title = models.CharField(max_length=200)
     description = models.TextField()
-
-    type = models.CharField(max_length=27, choices=TYPE)
     status = models.CharField(max_length=27, choices=STATUS, default="not_started")
     priority = models.CharField(max_length=27, choices=PRIORITY)
 
@@ -52,7 +41,6 @@ class Task(models.Model):
     assigned_to = models.ManyToManyField(
         "accounts.User", blank=True, related_name="AssignedUsers"
     )
-
 
     created_at = models.DateField(auto_now_add=True, editable=False)
     updated_date = models.DateField(auto_now=True)
@@ -84,29 +72,6 @@ class Task(models.Model):
     def get_user_submission(self, user):
         return self.submissions.filter(user=user).first()
 
-    def calculate_points(self):
-        # Determine base points based on priority
-        if self.priority == "critical":
-            base_points = 10
-        elif self.priority == "high":
-            base_points = 8
-        elif self.priority == "medium":
-            base_points = 5
-        elif self.priority == "low":
-            base_points = 3
-        else:
-            base_points = 0
-
-        # Calculate points deduction based on lateness
-        if self.submitted_date and self.due_date:
-            days_late = (self.submitted_date.date() - self.due_date).days
-            if days_late > 0:
-                base_points -= days_late
-
-        # Ensure points do not fall below zero
-        return max(base_points, 0)
-
-    # Time lef for tasks assigned
     def time_left(self):
         if self.due_date and self.created_at:
             time_left = (self.due_date - self.created_at).days
@@ -114,12 +79,6 @@ class Task(models.Model):
                 return "Due Date is Over"
             return f"{time_left} days"
         return None
-
-    def save(self, *args, **kwargs):
-        # Example of calling calculate_points method before saving
-        if self.all_submitted and not self.submitted_date:
-            self.submitted_date = timezone.now()
-        super(Task, self).save(*args, **kwargs)
 
 
 class TaskSubmission(models.Model):
