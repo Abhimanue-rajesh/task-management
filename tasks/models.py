@@ -57,7 +57,7 @@ class Task(models.Model):
         ]
 
     def assigned_to_names(self):
-        return ", ".join([user.username for user in self.assigned_to.all()])
+        return [user.username for user in self.assigned_to.all()]
 
     def __str__(self):
         return self.title

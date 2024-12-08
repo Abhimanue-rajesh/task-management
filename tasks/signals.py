@@ -3,7 +3,8 @@ import logging
 from django.db.models.signals import m2m_changed, post_save
 from django.dispatch import receiver
 
-from .models import Activity, Task, TaskSubmission
+from accounts.models import User
+from tasks.models import Activity, Task, TaskSubmission
 
 logger = logging.getLogger("django")
 
@@ -20,6 +21,29 @@ def create_task_submissions(sender, instance, action, pk_set, **kwargs):
             )
             if created:
                 logger.info(f"TaskSubmission instance created for {user}")
+
+
+@receiver(m2m_changed, sender=Task.assigned_to.through)
+def manage_task_submissions(sender, instance, action, pk_set, **kwargs):
+    if action == "post_add":
+        # Create TaskSubmission instances for newly added users
+        new_users = instance.assigned_to.filter(pk__in=pk_set)
+        for user in new_users:
+            submission, created = TaskSubmission.objects.get_or_create(
+                task=instance, user=user
+            )
+            if created:
+                logger.info(f"TaskSubmission instance created for {user}")
+
+    elif action == "post_remove":
+        # Remove TaskSubmission instances for removed users
+        removed_users = User.objects.filter(pk__in=pk_set)
+        for user in removed_users:
+            deleted_count, _ = TaskSubmission.objects.filter(
+                task=instance, user=user
+            ).delete()
+            if deleted_count > 0:
+                logger.info(f"TaskSubmission instance deleted for {user}")
 
 
 @receiver(post_save, sender=TaskSubmission)

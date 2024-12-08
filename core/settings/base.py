@@ -23,16 +23,16 @@ INSTALLED_APPS = [
 
 # Add External Apps Here
 EXTERNAL_APPS = [
-    "accounts.apps.AccountsConfig",  
-    "tasks.apps.TasksConfig", 
+    "accounts.apps.AccountsConfig",
+    "tasks.apps.TasksConfig",
 ]
 
 INSTALLED_APPS += EXTERNAL_APPS
 
-AUTH_USER_MODEL = 'accounts.User'
+AUTH_USER_MODEL = "accounts.User"
 
-LOGIN_REDIRECT_URL = "home"
-LOGOUT_REDIRECT_URL = "home"
+LOGIN_REDIRECT_URL = "task_list"
+LOGOUT_REDIRECT_URL = "login_user"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",

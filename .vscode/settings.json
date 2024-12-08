@@ -1,6 +1,7 @@
 {
     "djlint.showInstallError": false,
     "cSpell.words": [
+        "borderless",
         "capfirst",
         "dotenv",
         "forloop",

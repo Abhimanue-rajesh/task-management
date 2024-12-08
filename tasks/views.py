@@ -25,14 +25,14 @@ class TaskList(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         queryset = Task.objects.all()
-        type_filter = self.request.GET.get("type")
+        title_filter = self.request.GET.get("title")
         priority_filter = self.request.GET.get("priority")
         status_filter = self.request.GET.get("status")
         assigned_to_filter = self.request.GET.getlist("assigned_to")
         due_date_sort = self.request.GET.get("due_date_sort")
 
-        if type_filter:
-            queryset = queryset.filter(type=type_filter)
+        if title_filter:
+            queryset = queryset.filter(title__icontains=title_filter)
         if priority_filter:
             queryset = queryset.filter(priority=priority_filter)
         if status_filter:
@@ -48,6 +48,7 @@ class TaskList(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context["title_filter"] = self.request.GET.get("title", "")
         context["priority_choices"] = Task.PRIORITY
         context["status_choices"] = Task.STATUS
         context["assigned_to_choices"] = (
@@ -64,6 +65,10 @@ class TaskList(LoginRequiredMixin, ListView):
         context["status_choices"] = [
             ("not_started", "Not Started"),
             ("in_progress", "In Progress"),
+            ("terminated", "Terminated"),
+            ("waiting_for_approval", "Waiting For Approval"),
+            ("completed", "Completed"),
+            ("closed", "Closed"),
         ]
 
         return context
@@ -90,16 +95,7 @@ class TaskDetail(LoginRequiredMixin, DetailView):
             ).exists()
             for assigned_user in task.assigned_to.all()
         )
-        # Check if all users assigned to the task have submitted their work
-        # This code does the following:
-        # 1. Iterates over all users assigned to the task (task.assigned_to.all())
-        # 2. For each assigned user, checks if there's a TaskSubmission that is:
-        #    - associated with this task
-        #    - created by this user
-        #    - marked as submitted (submitted=True)
-        # 3. The all() function returns True only if every assigned user has a submission
-        #    that meets these criteria, otherwise it returns False
-        # This can be used to determine if a task is fully complete or still in progress
+
         context.update(
             {
                 "activities": task.activities.all(),
@@ -177,22 +173,11 @@ class TaskUpdateView(LoginRequiredMixin, UpdateView):
     template_name = "tasks/task_create_update.html"
     extra_context = {"page_title": "Update Task"}
 
-    role_hierarchy = {
-        "C_SUITE": ["C_SUITE", "MANAGER", "EMPLOYEE", "TRAINEE"],
-        "MANAGER": ["MANAGER", "EMPLOYEE", "TRAINEE"],
-        "EMPLOYEE": ["EMPLOYEE", "TRAINEE"],
-    }
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        user_role = self.request.user.role.type
-        assignable_roles = self.role_hierarchy.get(user_role, [])
-        if user_role != "TRAINEE":
-            users = User.objects.filter(role__type__in=assignable_roles)
-            context["users"] = users
-            context[
-                "assigned_users"
-            ] = self.object.assigned_to.all()  # Add assigned users
+        users = User.objects.all()
+        context["users"] = users
+        context["assigned_users"] = self.object.assigned_to.all()
         return context
 
     def get_success_url(self):
@@ -211,7 +196,7 @@ class TaskUpdateView(LoginRequiredMixin, UpdateView):
         return initial
 
     def form_valid(self, form):
-        current_user = self.request.user
+        # current_user = self.request.user
 
         # Save the form to update the Task object
         response = super().form_valid(form)
@@ -219,26 +204,20 @@ class TaskUpdateView(LoginRequiredMixin, UpdateView):
         # Clear existing assignments
         form.instance.assigned_to.clear()
 
-        if current_user.role.type == "TRAINEE":
-            form.instance.assigned_to.add(current_user)
-        else:
-            assigned_usernames = self.request.POST.get("assigned_to", "").split(", ")
-            invalid_usernames = []
+        assigned_ids = self.request.POST.getlist("assigned_to")
+        invalid_ids = []
+        for user_id in assigned_ids:
+            try:
+                user = User.objects.get(id=user_id)
+                form.instance.assigned_to.add(user)
+            except User.DoesNotExist:
+                invalid_ids.append(user_id)
 
-            for username in assigned_usernames:
-                username = username.strip()
-                if username:
-                    try:
-                        user = User.objects.get(username=username)
-                        form.instance.assigned_to.add(user)
-                    except User.DoesNotExist:
-                        invalid_usernames.append(username)
-
-            if invalid_usernames:
-                messages.error(
-                    self.request,
-                    f"The following users do not exist: {', '.join(invalid_usernames)}",
-                )
+        if invalid_ids:
+            messages.error(
+                self.request,
+                f"The following user IDs do not exist: {', '.join(invalid_ids)}",
+            )
 
         return response
 
@@ -301,7 +280,23 @@ class SubmittedTasksList(LoginRequiredMixin, ListView):
     context_object_name = "submitted_task"
 
     def get_queryset(self):
-        return Task.objects.filter(all_submitted=True, approval_status=False)
+        queryset = Task.objects.filter(all_submitted=True, approval_status=False)
+        priority_filter = self.request.GET.get("priority")
+        status_filter = self.request.GET.get("status")
+        assigned_to_filter = self.request.GET.getlist("assigned_to")
+        due_date_sort = self.request.GET.get("due_date_sort")
+
+        if priority_filter:
+            queryset = queryset.filter(priority=priority_filter)
+        if status_filter:
+            queryset = queryset.filter(status=status_filter)
+        if assigned_to_filter and any(assigned_to_filter):
+            queryset = queryset.filter(assigned_to__in=assigned_to_filter)
+        if due_date_sort == "asc":
+            queryset = queryset.order_by("due_date")
+        elif due_date_sort == "desc":
+            queryset = queryset.order_by("-due_date")
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -317,7 +312,23 @@ class ApprovedTaskList(LoginRequiredMixin, ListView):
     context_object_name = "approved_tasks"
 
     def get_queryset(self):
-        return Task.objects.filter(approval_status=True)
+        queryset = Task.objects.filter(approval_status=True)
+        priority_filter = self.request.GET.get("priority")
+        status_filter = self.request.GET.get("status")
+        assigned_to_filter = self.request.GET.getlist("assigned_to")
+        due_date_sort = self.request.GET.get("due_date_sort")
+
+        if priority_filter:
+            queryset = queryset.filter(priority=priority_filter)
+        if status_filter:
+            queryset = queryset.filter(status=status_filter)
+        if assigned_to_filter and any(assigned_to_filter):
+            queryset = queryset.filter(assigned_to__in=assigned_to_filter)
+        if due_date_sort == "asc":
+            queryset = queryset.order_by("due_date")
+        elif due_date_sort == "desc":
+            queryset = queryset.order_by("-due_date")
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

@@ -1,88 +1,22 @@
 {% extends "general_base.html" %}
 {% block page_content %}
     <div class="container mt-2">
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item">
-                    <a class="link-body-emphasis" href="#"><i class="bi bi-house-door-fill"></i></a>
-                </li>
-                <li class="breadcrumb-item active" aria-current="page">View Tasks</li>
-            </ol>
-        </nav>
-        <div class="card p-2 my-2">
-            <form method="get" class="row align-items-end mb-2">
-                <!-- Type Filter -->
-                <div class="form-group col-2">
-                    <label for="type">Type</label>
-                    <select id="type" name="type" class="form-select form-select-sm">
-                        <option value="">Select Type</option>
-                        {% for type_value, type_name in type_choices %}
-                            <option value="{{ type_value }}"
-                                    {% if request.GET.type == type_value %}selected{% endif %}>{{ type_name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <!-- Priority Filter -->
-                <div class="form-group col-2">
-                    <label for="priority">Priority</label>
-                    <select id="priority" name="priority" class="form-select form-select-sm">
-                        <option value="">Select Priority</option>
-                        {% for priority_value, priority_name in priority_choices %}
-                            <option value="{{ priority_value }}"
-                                    {% if request.GET.priority == priority_value %}selected{% endif %}>
-                                {{ priority_name }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <!-- Status Filter -->
-                <div class="form-group col-2">
-                    <label for="status">Status</label>
-                    <select id="status" name="status" class="form-select form-select-sm">
-                        <option value="">Select Status</option>
-                        {% for status_value, status_name in status_choices %}
-                            <option value="{{ status_value }}"
-                                    {% if request.GET.status == status_value %}selected{% endif %}>
-                                {{ status_name }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <!-- Assigned To Filter -->
-                <div class="form-group col-2">
-                    <label for="assigned_to">Assigned To</label>
-                    <select id="assigned_to"
-                            name="assigned_to"
-                            class="form-select form-select-sm">
-                        <option value="">Select User</option>
-                        {% for user_id, username in assigned_to_choices %}
-                            <option value="{{ user_id }}"
-                                    {% if user_id|stringformat:"s" in selected_assigned_to %}selected{% endif %}>
-                                {{ username }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <!-- Due Date Sorting -->
-                <div class="form-group col-2">
-                    <label for="due_date_sort">Sort by Due Date</label>
-                    <select id="due_date_sort"
-                            name="due_date_sort"
-                            class="form-select form-select-sm">
-                        <option value="">Sort by Due Date</option>
-                        {% for value, label in due_date_sort_options %}
-                            <option value="{{ value }}"
-                                    {% if request.GET.due_date_sort == value %}selected{% endif %}>{{ label }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <!-- Filter and Reset Buttons -->
-                <div class="form-group col-2 d-flex justify-content-end">
-                    <button type="submit" class="btn btn-primary w-75 me-1 btn-sm">Filter</button>
-                    <a href="{% url 'task_list' %}" class="btn btn-danger btn-sm">Clear</a>
-                </div>
-            </form>
+        <div class="row">
+            <div class="col">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item">
+                            <a class="link-body-emphasis" href="#"><i class="bi bi-house-door-fill"></i></a>
+                        </li>
+                        <li class="breadcrumb-item active" aria-current="page">View Tasks</li>
+                    </ol>
+                </nav>
+            </div>
+            <div class="col text-end">
+                <a class="btn btn-primary btn-sm" href="{% url "create_task" %}">Create Task</a>
+            </div>
         </div>
+        {% include "tasks/includes/search_filter.html" %}
         {% if all_tasks %}
             <table class="table table-striped table-hover table-sm table-bordered">
                 <thead>
@@ -93,12 +27,12 @@
                         <th scope="col">Status</th>
                         <th scope="col">Assigned To</th>
                         <th scope="col">Due Date</th>
-                        <th scope="col">View</th>
                     </tr>
                 </thead>
                 <tbody class="table-group-divider">
                     {% for task in all_tasks %}
-                        <tr class="text-center">
+                        <tr class="text-center clickable-row"
+                            data-href="{% url 'task_detail' task.id %}">
                             <td>{{ forloop.counter }}</td>
                             <td class="text-start">
                                 {{ task.title|capfirst|slice:":30" }}
@@ -106,11 +40,12 @@
                             </td>
                             <td>{{ task.get_priority_display }}</td>
                             <td>{{ task.get_status_display }}</td>
-                            <td class="text-start">{{ task.assigned_to_names }}</td>
-                            <td>{{ task.due_date }}</td>
-                            <td>
-                                <a href="{% url 'task_detail' task.id %}"><i class="bi bi-eye"></i></a>
+                            <td class="text-start">
+                                {% for username in task.assigned_to_names %}
+                                    <span class="badge user-name-badge rounded-pill bg-primary me-1">{{ username }}</span>
+                                {% endfor %}
                             </td>
+                            <td>{{ task.due_date }}</td>
                         </tr>
                     {% endfor %}
                 </tbody>

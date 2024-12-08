@@ -20,6 +20,9 @@ class CreateUpdateTask(forms.ModelForm):
             "description": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
             "due_date": DateInput(attrs={"class": "form-control", "type": "date"}),
             "priority": forms.Select(attrs={"class": "form-select"}),
+            "assigned_to": forms.SelectMultiple(
+                attrs={"class": "form-select", "multiple": "multiple"}
+            ),
         }
 
     def __init__(self, *args, **kwargs):

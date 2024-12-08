@@ -15,3 +15,15 @@ function goBackAndRefresh() {
     }
   });
 }
+
+document.addEventListener("DOMContentLoaded", function () {
+  // Add click event to all rows with the 'clickable-row' class
+  document.querySelectorAll(".clickable-row").forEach(function (row) {
+    row.addEventListener("click", function () {
+      const href = this.dataset.href;
+      if (href) {
+        window.location.href = href;
+      }
+    });
+  });
+});
