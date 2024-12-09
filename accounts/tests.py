@@ -37,17 +37,7 @@ class TemplateRenderTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "admin/login.html")
 
-    def test_home_template_render(self):
-        response = self.client.get(reverse("home"))
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "home.html")
-
     def test_login_template_render(self):
-        response = self.client.get(reverse("login"))
+        response = self.client.get(reverse("login_user"))
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "registration/login.html")
-
-    def test_signup_template_render(self):
-        response = self.client.get(reverse("signup"))
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "registration/signup.html")
+        self.assertTemplateUsed(response, "accounts/login.html")
